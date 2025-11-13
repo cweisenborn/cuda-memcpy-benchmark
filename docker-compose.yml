@@ -1,0 +1,21 @@
+name: nsight-streamer-nsys
+services:
+    nsight-streamer-nsys:
+        container_name: nsight-streamer-nsys
+        ports:
+            - 8080:8080
+            - 3478:3478
+        # deploy:
+        #     resources:
+        #         reservations:
+        #             devices:
+        #                 - driver: nvidia
+        #                   count: all
+        #                   capabilities:
+        #                       - gpu
+        # runtime: nvidia
+        # environment:
+        #     - NVIDIA_DRIVER_CAPABILITIES=all
+        volumes:
+            - .:/Projects
+        image: nvcr.io/nvidia/devtools/nsight-streamer-nsys:2025.5.1

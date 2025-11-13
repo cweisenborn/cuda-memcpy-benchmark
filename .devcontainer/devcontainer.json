@@ -1,0 +1,68 @@
+{
+	"name": "FFT-TIMINIG-DEV",
+	"build": {
+		"dockerfile": "./Dockerfile.dev",
+		"context": ".",
+		// Use the build args to set the OS and CUDA versions. Must match available Docker Hub image tags.
+		"args": { 
+			"OS_VERSION": "ubuntu24.04", 
+			"CUDA_VERSION": "13.0.2"
+		}
+	},
+
+	"runArgs": [
+		"--privileged",
+		"--cap-add",
+		"SYS_ADMIN",
+		"--runtime",
+		"nvidia",
+		"--gpus",
+		"all",
+		"--security-opt",
+		"apparmor:unconfined",
+		"-v", 
+		"/sys/kernel/debug:/sys/kernel/debug"
+	],
+
+	"postCreateCommand": "./.devcontainer/setup.sh",
+
+	"customizations": {
+        "vscode": {
+            "extensions": [
+				"ms-vscode.cpptools",
+				"ms-vscode.cmake-tools",
+				"NVIDIA.nsight-vscode-edition",
+				"ms-python.python",
+				"eamodio.gitlens",
+				"ms-vscode.cpptools-extension-pack",
+				"ms-python.vscode-pylance",
+				"ms-toolsai.vscode-jupyter-powertoys",
+				"ms-toolsai.jupyter"
+			]
+        }
+    },
+
+	// "forwardPorts": [6088],
+	// "portsAttributes": {
+	// 	"6088": {
+	// 	"label": "nsight"
+	// 	}
+	// },
+
+	// Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+	"features": {
+		"common": {
+			// "username": "root",
+			// "uid": "automatic",
+			// "gid": "automatic",
+			// "installZsh": true,
+			// "installOhMyZsh": true,
+			"upgradePackages": true,
+			"nonFreePackages": false
+		},
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {}
+		// "git": "latest",
+		// "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+	},
+	"remoteUser": "ubuntu"
+}

@@ -1,0 +1,62 @@
+
+ARG OS_VERSION="ubuntu24.04" 
+ARG CUDA_VERSION="12.9.1"
+FROM nvidia/cuda:${CUDA_VERSION}-devel-${OS_VERSION}
+
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES all
+
+# Sets the time zone for the system. Needed for some packages to install unattended.
+ENV TZ=America/New_York
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Install dependencies.
+RUN apt-get update && apt-get -y install \
+    autoconf \
+    automake \
+    build-essential \
+    libtool \
+    ccache \
+    cmake \
+    git \
+    wget \
+    libglvnd0 \
+    libgl1 \
+    libglx0 \
+    libegl1 \
+    libxext6 \
+    libx11-6 \
+    librdmacm-dev \
+    ibverbs-utils \
+    nvtop \
+    ffmpeg \
+    pkg-config \
+    python3-pip \
+    python3-venv \
+    python3-setuptools \
+    mesa-common-dev \
+    libsystemd-dev \
+    libssl-dev \
+    python3-pip \
+    python3-venv \
+    python3-setuptools \
+    gdb \
+    ninja-build \
+    curl \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    libxml2-dev \
+    llvm \
+    clang
+
+RUN cd /tmp && \
+    wget https://developer.nvidia.com/downloads/compute/cuFFTDx/redist/cuFFTDx/cuda13/nvidia-mathdx-25.06.1-cuda13.tar.gz  && \
+    tar -xzf nvidia-mathdx-25.06.1-cuda13.tar.gz && \
+    cd nvidia-mathdx-25.06.1/nvidia && \
+    mv mathdx /opt/nvidia/. && \
+    cd ../.. && \
+    rm -rf nvidia-mathdx-25.06.1-cuda13.tar.gz nvidia-mathdx-25.06.1
+
+# This allows nsys (NVIDIA Nsight Systems) to access system-wide performance counters as an un-privileged user.
+# DO NOT do this on a production system.
+RUN echo "kernel.perf_event_paranoid = 0" >> /etc/sysctl.conf

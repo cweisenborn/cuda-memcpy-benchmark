@@ -1,0 +1,4 @@
+{
+    "python.defaultInterpreterPath": ".venv/bin/python",
+    "peacock.remoteColor": "#90d5aa"
+}
