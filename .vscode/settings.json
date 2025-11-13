@@ -1,4 +1,12 @@
 {
     "python.defaultInterpreterPath": ".venv/bin/python",
-    "peacock.remoteColor": "#90d5aa"
+    "peacock.remoteColor": "#90d5aa",
+    "workbench.colorCustomizations": {
+        "sash.hoverBorder": "#b5e3c6",
+        "statusBar.background": "#90d5aa",
+        "statusBar.foreground": "#15202b",
+        "statusBarItem.hoverBackground": "#6bc78e",
+        "statusBarItem.remoteBackground": "#90d5aa",
+        "statusBarItem.remoteForeground": "#15202b"
+    }
 }
