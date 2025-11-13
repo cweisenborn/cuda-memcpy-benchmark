@@ -57,6 +57,9 @@ def plot_transfer_timings(
     ax.set_title(f'{transfer_type} Transfer Time\n{num_elements:,} elements, {mode}', 
                  fontsize=14, fontweight='bold')
     
+    # Disable scientific notation on x-axis and use plain integer format
+    ax.ticklabel_format(style='plain', axis='x')
+    
     # Grid
     ax.grid(True, alpha=0.3, linestyle='--')
     
