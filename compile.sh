@@ -25,7 +25,16 @@ g++ -O3 -std=c++11 \
 echo "✓ C++ H2H benchmark compiled successfully: build/h2h_benchmark"
 echo ""
 
+# System Info Utility
+echo "Compiling system info utility..."
+nvcc -O3 -std=c++11 \
+    -o build/system_info \
+    src/system_info.cu
+echo "✓ System info utility compiled successfully: build/system_info"
+echo ""
+
 echo "=== Compilation Complete ==="
 echo "Executables created:"
 echo "  - build/h2d_benchmark (CUDA Host-to-Device)"
 echo "  - build/h2h_benchmark (C++ Host-to-Host)"
+echo "  - build/system_info (System Information Utility)"

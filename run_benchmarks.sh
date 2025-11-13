@@ -68,6 +68,7 @@ mkdir -p "${RUN_DIR}"
 # Output file paths
 H2D_JSON="${RUN_DIR}/h2d_results.json"
 H2H_JSON="${RUN_DIR}/h2h_results.json"
+SYSTEM_JSON="${RUN_DIR}/system_info.json"
 H2D_NSYS="${RUN_DIR}/h2d_profile"
 H2D_STATS="${RUN_DIR}/h2d_profile_stats.txt"
 
@@ -75,7 +76,11 @@ echo "=== Step 1: Compiling Benchmarks ==="
 ./compile.sh
 echo ""
 
-echo "=== Step 2: Running H2D Benchmark ==="
+echo "=== Step 2: Collecting System Information ==="
+./build/system_info "${SYSTEM_JSON}"
+echo ""
+
+echo "=== Step 3: Running H2D Benchmark ==="
 
 # Build the benchmark command with optional pinned memory flag
 H2D_CMD="./build/h2d_benchmark ${NUM_ELEMENTS} ${NUM_ITERATIONS} ${H2D_JSON}"
@@ -106,15 +111,15 @@ else
 fi
 echo ""
 
-echo "=== Step 3: Running H2H Benchmark ==="
+echo "=== Step 4: Running H2H Benchmark ==="
 ./build/h2h_benchmark ${NUM_ELEMENTS} ${NUM_ITERATIONS} "${H2H_JSON}"
 echo ""
 echo "✓ H2H benchmark complete"
 echo "  JSON output: ${H2H_JSON}"
 echo ""
 
-echo "=== Step 4: Generating Plots ==="
-python3 plot_benchmarks.py "${RUN_DIR}" "${H2D_JSON}" "${H2H_JSON}"
+echo "=== Step 5: Generating Plots ==="
+python3 plot_benchmarks.py "${RUN_DIR}" "${SYSTEM_JSON}" "${H2D_JSON}" "${H2H_JSON}"
 echo ""
 
 echo "=== Benchmark Run Complete ==="
@@ -122,6 +127,8 @@ echo ""
 echo "Results saved to: ${RUN_DIR}"
 echo ""
 echo "Generated files:"
+echo "  System:"
+echo "    - system_info.json (System information)"
 echo "  Benchmarks:"
 echo "    - h2d_results.json (CUDA H2D results)"
 echo "    - h2h_results.json (C++ H2H results)"
@@ -148,11 +155,13 @@ if command -v jq &> /dev/null; then
     jq -r '"  Min: \(.min_time_ms * 1000 | tostring | .[0:8]) µs"' "${H2D_JSON}"
     jq -r '"  Avg: \(.avg_time_ms * 1000 | tostring | .[0:8]) µs"' "${H2D_JSON}"
     jq -r '"  Max: \(.max_time_ms * 1000 | tostring | .[0:8]) µs"' "${H2D_JSON}"
+    jq -r '"  Total time: \(.total_time_seconds | tostring | .[0:8]) seconds"' "${H2D_JSON}"
     echo ""
     echo "H2H (memcpy) Results:"
     jq -r '"  Min: \(.min_time_ms * 1000 | tostring | .[0:8]) µs"' "${H2H_JSON}"
     jq -r '"  Avg: \(.avg_time_ms * 1000 | tostring | .[0:8]) µs"' "${H2H_JSON}"
     jq -r '"  Max: \(.max_time_ms * 1000 | tostring | .[0:8]) µs"' "${H2H_JSON}"
+    jq -r '"  Total time: \(.total_time_seconds | tostring | .[0:8]) seconds"' "${H2H_JSON}"
 else
     echo "Install 'jq' to see formatted summary"
     echo "Raw results available in:"

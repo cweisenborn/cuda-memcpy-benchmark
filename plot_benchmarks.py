@@ -23,13 +23,14 @@ def load_benchmark_json(json_path):
     return data
 
 
-def plot_benchmark_timings(data, output_file):
+def plot_benchmark_timings(data, output_file, system_info_text=""):
     """
     Generate a time series plot of benchmark timings
     
     Args:
         data: Dictionary containing benchmark data from JSON
         output_file: Path to save the PNG file
+        system_info_text: Formatted system information string
     """
     timings_ms = data['timings_ms']
     avg_time = data['avg_time_ms']
@@ -40,6 +41,7 @@ def plot_benchmark_timings(data, output_file):
     benchmark_type = data['benchmark_type']
     total_bytes = data['total_bytes']
     memory_type = data.get('memory_type', 'N/A')  # Get memory type if available
+    total_time = data.get('total_time_seconds', 0)  # Get total execution time
     
     # Convert timings to microseconds
     timings_us = [t * 1000 for t in timings_ms]
@@ -99,11 +101,18 @@ def plot_benchmark_timings(data, output_file):
     stats_text += f'Min: {min_time_us:.2f} µs\n'
     stats_text += f'Avg: {avg_time_us:.2f} µs\n'
     stats_text += f'Max: {max_time_us:.2f} µs\n'
-    stats_text += f'Range: {max_time_us - min_time_us:.2f} µs'
+    stats_text += f'Range: {max_time_us - min_time_us:.2f} µs\n'
+    stats_text += f'Total time: {total_time:.2f} s'
     
     ax.text(0.02, 0.98, stats_text, transform=ax.transAxes,
             fontsize=10, verticalalignment='top',
             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
+    
+    # Add system info text box (bottom right)
+    if system_info_text:
+        ax.text(0.98, 0.02, system_info_text, transform=ax.transAxes,
+                fontsize=9, verticalalignment='bottom', horizontalalignment='right',
+                bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8))
     
     # Tight layout
     plt.tight_layout()
@@ -115,7 +124,7 @@ def plot_benchmark_timings(data, output_file):
     print(f"Plot saved to: {output_file}")
 
 
-def plot_comparison(h2d_data, h2h_data, output_file):
+def plot_comparison(h2d_data, h2h_data, output_file, system_info_text=""):
     """
     Generate a comparison plot of H2D vs H2H benchmarks
     
@@ -123,6 +132,7 @@ def plot_comparison(h2d_data, h2h_data, output_file):
         h2d_data: Dictionary containing H2D benchmark data
         h2h_data: Dictionary containing H2H benchmark data
         output_file: Path to save the PNG file
+        system_info_text: Formatted system information string
     """
     # Create figure with two subplots
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10))
@@ -170,6 +180,11 @@ def plot_comparison(h2d_data, h2h_data, output_file):
     # Main title
     fig.suptitle('Memory Copy Benchmark Comparison', fontsize=16, fontweight='bold', y=0.995)
     
+    # Add system info text box (bottom center)
+    if system_info_text:
+        fig.text(0.5, 0.01, system_info_text, ha='center', va='bottom',
+                fontsize=9, bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8))
+    
     # Tight layout
     plt.tight_layout()
     
@@ -180,24 +195,56 @@ def plot_comparison(h2d_data, h2h_data, output_file):
     print(f"Comparison plot saved to: {output_file}")
 
 
+def format_system_info(system_data):
+    """Format system information for display in plots"""
+    info_lines = []
+    
+    if 'cpu' in system_data:
+        cpu = system_data['cpu']
+        info_lines.append(f"CPU: {cpu.get('model', 'Unknown')} ({cpu.get('cores', 'N/A')} cores)")
+    
+    if 'memory' in system_data:
+        mem = system_data['memory']
+        total_ram = mem.get('total_ram_gb', 0)
+        info_lines.append(f"RAM: {total_ram:.1f} GB")
+    
+    if 'cuda' in system_data and 'devices' in system_data['cuda']:
+        devices = system_data['cuda']['devices']
+        if devices:
+            gpu = devices[0]
+            gpu_name = gpu.get('name', 'Unknown GPU')
+            gpu_mem = gpu.get('total_memory_gb', 0)
+            info_lines.append(f"GPU: {gpu_name} ({gpu_mem:.1f} GB)")
+    
+    return '\n'.join(info_lines)
+
+
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: python plot_benchmarks.py <output_directory> <json_file1> [json_file2 ...]")
+    if len(sys.argv) < 4:
+        print("Usage: python plot_benchmarks.py <output_directory> <system_info.json> <benchmark1.json> [benchmark2.json ...]")
         print("\nExamples:")
         print("  Single benchmark:")
-        print("    python plot_benchmarks.py ./output h2d_results.json")
+        print("    python plot_benchmarks.py ./output system_info.json h2d_results.json")
         print("\n  Multiple benchmarks (will create comparison plot):")
-        print("    python plot_benchmarks.py ./output h2d_results.json h2h_results.json")
+        print("    python plot_benchmarks.py ./output system_info.json h2d_results.json h2h_results.json")
         sys.exit(1)
     
     output_dir = sys.argv[1]
-    json_files = sys.argv[2:]
+    system_info_file = sys.argv[2]
+    json_files = sys.argv[3:]
     
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
     print(f"Output directory: {output_dir}")
-    print(f"Processing {len(json_files)} JSON file(s)...\n")
+    
+    # Load system information
+    print(f"Loading system information from {system_info_file}...")
+    system_data = load_benchmark_json(system_info_file)
+    system_info_text = format_system_info(system_data)
+    print(f"System Info:\n{system_info_text}\n")
+    
+    print(f"Processing {len(json_files)} benchmark file(s)...\n")
     
     # Load all benchmark data
     benchmarks = []
@@ -210,7 +257,7 @@ def main():
         basename = Path(json_file).stem
         output_file = os.path.join(output_dir, f"{basename}_plot.png")
         print(f"Generating plot for {data['benchmark_type']} benchmark...")
-        plot_benchmark_timings(data, output_file)
+        plot_benchmark_timings(data, output_file, system_info_text)
         print()
     
     # Generate comparison plot if we have both H2D and H2H
@@ -226,7 +273,7 @@ def main():
     if h2d_data and h2h_data:
         comparison_file = os.path.join(output_dir, "comparison_plot.png")
         print("Generating comparison plot...")
-        plot_comparison(h2d_data, h2h_data, comparison_file)
+        plot_comparison(h2d_data, h2h_data, comparison_file, system_info_text)
         print()
     
     print("Done!")

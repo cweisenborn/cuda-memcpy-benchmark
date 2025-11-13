@@ -32,7 +32,8 @@ void write_json_output(const std::string& output_path,
                        const std::vector<double>& timings_ms,
                        double min_time,
                        double max_time,
-                       double avg_time) {
+                       double avg_time,
+                       double total_time_seconds) {
     std::ofstream out(output_path);
     if (!out.is_open()) {
         fprintf(stderr, "Failed to open output file: %s\n", output_path.c_str());
@@ -49,6 +50,7 @@ void write_json_output(const std::string& output_path,
     out << "  \"min_time_ms\": " << min_time << ",\n";
     out << "  \"max_time_ms\": " << max_time << ",\n";
     out << "  \"avg_time_ms\": " << avg_time << ",\n";
+    out << "  \"total_time_seconds\": " << total_time_seconds << ",\n";
     out << "  \"timings_ms\": [";
     
     for (size_t i = 0; i < timings_ms.size(); ++i) {
@@ -139,6 +141,8 @@ int main(int argc, char** argv) {
     std::vector<double> timings_ms;
     timings_ms.reserve(num_iterations);
     
+    auto benchmark_start = std::chrono::high_resolution_clock::now();
+    
     for (int i = 0; i < num_iterations; ++i) {
         auto start = std::chrono::high_resolution_clock::now();
         
@@ -154,6 +158,10 @@ int main(int argc, char** argv) {
         }
     }
     
+    auto benchmark_end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> total_duration = benchmark_end - benchmark_start;
+    double total_time_seconds = total_duration.count();
+    
     // Calculate statistics
     double min_time = *std::min_element(timings_ms.begin(), timings_ms.end());
     double max_time = *std::max_element(timings_ms.begin(), timings_ms.end());
@@ -163,11 +171,12 @@ int main(int argc, char** argv) {
     printf("Min time: %.6f ms (%.2f µs)\n", min_time, min_time * 1000);
     printf("Max time: %.6f ms (%.2f µs)\n", max_time, max_time * 1000);
     printf("Avg time: %.6f ms (%.2f µs)\n", avg_time, avg_time * 1000);
+    printf("Total benchmark time: %.3f seconds\n", total_time_seconds);
     printf("===============\n\n");
     
     // Write JSON output
     write_json_output(output_path, num_elements, num_iterations, use_pinned_memory,
-                      timings_ms, min_time, max_time, avg_time);
+                      timings_ms, min_time, max_time, avg_time, total_time_seconds);
     
     // Cleanup
     CUDA_CHECK(cudaStreamDestroy(stream));
